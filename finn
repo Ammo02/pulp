@@ -1,0 +1,110 @@
+import pandas as pd
+from pulp import *
+
+# lese excel Datei ein
+xls = pd.ExcelFile("Tage.xlsx")
+# lese die verschiedenen Mappen ein
+df = pd.read_excel(xls, 'Tag1')
+# erstelle LpProblem
+prob = LpProblem("DietProblem", LpMinimize)
+
+foods = list(df['Gericht'])
+
+# füge Einträge aus Excel in dict ein
+preis = dict(zip(foods, df['Preis']))
+kalorien = dict(zip(foods, df['Kalorien']))
+fett = dict(zip(foods, df['Fett (g)']))
+natrium = dict(zip(foods, df['Natrium (mg)']))
+kohle = dict(zip(foods, df['Kohlenhydrate (g)']))
+ballaststoffe = dict(zip(foods, df['Ballaststoffe (g)']))
+protein = dict(zip(foods, df['Protein (g)']))
+calcium = dict(zip(foods, df['Kalzium (mg)']))
+eisen = dict(zip(foods, df['Eisen (mg)']))
+zucker = dict(zip(foods, df['Zucker (g)']))
+kalium = dict(zip(foods, df['Kalium']))
+vitaminD = dict(zip(foods, df['Vitamin D (mcg)']))
+
+#dict für foods
+food_dict = LpVariable.dicts("Lebensmittel", foods, 0, cat='Integer')
+prob += lpSum([preis[i] * food_dict[i] for i in foods]), "Total Cost of the diet"
+
+#füge Nebenbedingungen zu LP Problem hinzu
+prob += lpSum([kalorien[f] * food_dict[f] for f in foods]) >= 1500.0, "CalorieMinimum"
+prob += lpSum([kalorien[f] * food_dict[f] for f in foods]) <= 2500.0, "CalorieMaximum"
+
+prob += lpSum([fett[f] * food_dict[f] for f in foods]) >= 50.0, "FettMinimum"
+prob += lpSum([fett[f] * food_dict[f] for f in foods]) <= 160.0, "FettMaximum"
+
+prob += lpSum([natrium[f] * food_dict[f] for f in foods]) >= 250.0, "NatriumMinimum"
+prob += lpSum([natrium[f] * food_dict[f] for f in foods]) <= 2000.0, "NatriumMaximum"
+
+prob += lpSum([kohle[f] * food_dict[f] for f in foods]) >= 100.0, "CarbsMinimum"
+prob += lpSum([kohle[f] * food_dict[f] for f in foods]) <= 550.0, "CarbsMaximum"
+
+prob += lpSum([ballaststoffe[f] * food_dict[f] for f in foods]) >= 10.0, "BallastMinimum"
+prob += lpSum([ballaststoffe[f] * food_dict[f] for f in foods]) <= 65.0, "BallastMaximum"
+
+prob += lpSum([protein[f] * food_dict[f] for f in foods]) >= 40.0, "ProteinMinimum"
+prob += lpSum([protein[f] * food_dict[f] for f in foods]) <= 180.0, "ProteinMaximum"
+
+prob += lpSum([calcium[f] * food_dict[f] for f in foods]) >= 400.0, "KalziumMinimum"
+prob += lpSum([calcium[f] * food_dict[f] for f in foods]) <= 1500.0, "KalziumMaximum"
+
+prob += lpSum([eisen[f] * food_dict[f] for f in foods]) >= 8.0, "EisenMinimum"
+prob += lpSum([eisen[f] * food_dict[f] for f in foods]) <= 53.0, "EisenMaximum"
+
+prob += lpSum([zucker[f] * food_dict[f] for f in foods]) >= 10.0, "ZuckerMinimum"
+prob += lpSum([zucker[f] * food_dict[f] for f in foods]) <= 130.0, "ZuckerMaximum"
+
+prob += lpSum([vitaminD[f] * food_dict[f] for f in foods]) >= 10.0, "VitaminDMinimum"  # darf nicht zu hoch sein
+prob += lpSum([vitaminD[f] * food_dict[f] for f in foods]) <= 250.0, "VitaminDMaximum"
+
+prob += lpSum([kalium[f] * food_dict[f] for f in foods]) >= 1000.0, "KaliumMinimum"
+prob += lpSum([kalium[f] * food_dict[f] for f in foods]) <= 9000.0, "KaliumMaximum"
+
+""" #Nährstoffbedarf für 7 Tage
+
+prob += lpSum([calories[f] * food_vars[f] for f in food_items]) >= 1500.0*7, "CalorieMinimum"
+prob += lpSum([calories[f] * food_vars[f] for f in food_items]) <= 2500.0*7, "CalorieMaximum"
+
+prob += lpSum([fat[f] * food_vars[f] for f in food_items]) >= 50.0*7, "FettMinimum"
+prob += lpSum([fat[f] * food_vars[f] for f in food_items]) <= 160.0*7, "FettMaximum"
+
+prob += lpSum([natrium[f] * food_vars[f] for f in food_items]) >= 250.0*7, "NatriumMinimum"
+prob += lpSum([natrium[f] * food_vars[f] for f in food_items]) <= 2000.0*7, "NatriumMaximum"
+
+prob += lpSum([carbs[f] * food_vars[f] for f in food_items]) >= 100.0*7, "CarbsMinimum"
+prob += lpSum([carbs[f] * food_vars[f] for f in food_items]) <= 550.0*7, "CarbsMaximum"
+
+prob += lpSum([ballaststoffe[f] * food_vars[f] for f in food_items]) >= 10.0*7, "BallastMinimum"
+prob += lpSum([ballaststoffe[f] * food_vars[f] for f in food_items]) <= 65.0*7, "BallastMaximum"
+
+prob += lpSum([protein[f] * food_vars[f] for f in food_items]) >= 40.0*7, "ProteinMinimum"
+prob += lpSum([protein[f] * food_vars[f] for f in food_items]) <= 180.0*7, "ProteinMaximum"
+
+prob += lpSum([calcium[f] * food_vars[f] for f in food_items]) >= 400.0*7, "KalziumMinimum"
+prob += lpSum([calcium[f] * food_vars[f] for f in food_items]) <= 1500.0*7, "KalziumMaximum"
+
+prob += lpSum([iron[f] * food_vars[f] for f in food_items]) >= 8.0*7, "EisenMinimum"
+prob += lpSum([iron[f] * food_vars[f] for f in food_items]) <= 53.0*7, "EisenMaximum"
+
+prob += lpSum([sugar[f] * food_vars[f] for f in food_items]) >= 10.0*7, "ZuckerMinimum"
+prob += lpSum([sugar[f] * food_vars[f] for f in food_items]) <= 130.0*7, "ZuckerMaximum"
+
+prob += lpSum([vitaminD[f] * food_vars[f] for f in food_items]) >= 10.0*7, "VitaminDMinimum" #darf nicht zu hoch sein
+prob += lpSum([vitaminD[f] * food_vars[f] for f in food_items]) <= 250.0*7, "VitaminDMaximum"
+
+prob += lpSum([kalium[f] * food_vars[f] for f in food_items]) >= 1000.0*7, "KaliumMinimum"
+prob += lpSum([kalium[f] * food_vars[f] for f in food_items]) <= 9000.0*7, "KaliumMaximum"
+
+"""
+
+prob.writeLP("SimpleDietProblem.lp")
+prob.solve()
+print("Status:", LpStatus[prob.status])
+
+for v in prob.variables():
+    if v.varValue > 0:
+        print(v.name, "=", v.varValue)
+
+print("The total cost of this diet is: {}€".format(round(value(prob.objective), 2)))
